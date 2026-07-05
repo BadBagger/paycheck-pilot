@@ -12,8 +12,8 @@ android {
         applicationId = "com.paycheckpilot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.4-menu"
+        versionCode = 6
+        versionName = "1.0.5-calendar-select"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

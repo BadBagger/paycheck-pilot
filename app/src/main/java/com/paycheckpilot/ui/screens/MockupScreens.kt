@@ -1,6 +1,7 @@
 package com.paycheckpilot.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,10 +72,11 @@ private val AppMuted = Color(0xFF536072)
 private val AppPage = Color(0xFFF5F7FB)
 private val AppCard = Color.White
 
-private data class DayBalance(
+private data class DayProjection(
     val balanceInCents: Long,
     val hasPositiveChange: Boolean,
     val hasNegativeChange: Boolean,
+    val events: List<CalendarEvent>,
 )
 
 @Composable
@@ -191,7 +194,13 @@ fun MockCalendarScreen(state: PaycheckPilotUiState) {
     var month by remember(state.settings?.nextPayday) {
         mutableStateOf(YearMonth.from(state.settings?.nextPayday ?: today))
     }
-    val balances = calendarBalances(state, month, today)
+    var selectedDate by remember { mutableStateOf(today) }
+    val projections = calendarProjections(state, month, today)
+    LaunchedEffect(month) {
+        if (YearMonth.from(selectedDate) != month) {
+            selectedDate = month.atDay(1)
+        }
+    }
     MockScreen {
         CardBlock {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -203,15 +212,52 @@ fun MockCalendarScreen(state: PaycheckPilotUiState) {
                     Icon(Icons.Default.ChevronRight, contentDescription = "Next month", tint = AppMuted)
                 }
             }
-            CalendarGrid(month, state.settings?.nextPayday, balances)
+            CalendarGrid(month, selectedDate, today, projections, onSelectDate = { selectedDate = it })
         }
+        SelectedDayCard(selectedDate, projections[selectedDate])
         CardBlock {
             Text("Upcoming", color = AppInk, fontWeight = FontWeight.Bold)
-            state.settings?.let {
-                UpcomingRow(Icons.Default.Savings, "Payday", it.nextPayday.prettyDate(), it.estimatedPaycheckInCents.moneyLabel(), AppGreen)
+            calendarEvents(state, today, today.plusMonths(2))
+                .filter { !it.date.isBefore(today) }
+                .sortedBy { it.date }
+                .take(4)
+                .forEach { event ->
+                    UpcomingRow(
+                        if (event.amountInCents > 0) Icons.Default.Savings else Icons.Default.Home,
+                        event.title,
+                        event.date.prettyDate(),
+                        kotlin.math.abs(event.amountInCents).moneyLabel(),
+                        if (event.amountInCents > 0) AppGreen else AppBlue,
+                    )
+                }
+        }
+    }
+}
+
+@Composable
+private fun SelectedDayCard(date: LocalDate, projection: DayProjection?) {
+    CardBlock(containerColor = Color(0xFFEAF3FF)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                Text(date.prettyDate(), color = AppInk, fontWeight = FontWeight.Bold)
+                Text("Selected day", color = AppMuted)
             }
-            state.bills.sortedBy { it.dueDate }.take(4).forEach { bill ->
-                UpcomingRow(Icons.Default.Home, bill.name, bill.dueDate.prettyDate(), bill.amountInCents.moneyLabel(), AppBlue)
+            projection?.let {
+                Text("Balance ${it.balanceInCents.moneyLabel()}", color = AppInk, fontWeight = FontWeight.Bold)
+            }
+        }
+        if (projection == null || projection.events.isEmpty()) {
+            Text("No planned bills or paychecks on this day.", color = AppMuted)
+        } else {
+            projection.events.forEach { event ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text(event.title, color = AppInk, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        event.amountInCents.signedMoneyLabel(),
+                        color = if (event.amountInCents >= 0) AppGreen else AppRed,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
     }
@@ -337,7 +383,13 @@ private fun BudgetLine(label: String, amount: Long, percent: Float, color: Color
 }
 
 @Composable
-private fun CalendarGrid(month: YearMonth, selectedDate: LocalDate?, balances: Map<LocalDate, DayBalance>) {
+private fun CalendarGrid(
+    month: YearMonth,
+    selectedDate: LocalDate,
+    today: LocalDate,
+    projections: Map<LocalDate, DayProjection>,
+    onSelectDate: (LocalDate) -> Unit,
+) {
     val first = month.atDay(1)
     val offset = first.dayOfWeek.value % 7
     val days = List(offset) { "" } + (1..month.lengthOfMonth()).map { it.toString() }
@@ -351,23 +403,30 @@ private fun CalendarGrid(month: YearMonth, selectedDate: LocalDate?, balances: M
                 val dayNumber = day.toIntOrNull()
                 val date = dayNumber?.let { month.atDay(it) }
                 val isSelected = date == selectedDate
-                val dayBalance = date?.let { balances[it] }
+                val isToday = date == today
+                val dayProjection = date?.let { projections[it] }
                 Box(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(CircleShape)
+                        .then(if (date != null) Modifier.clickable { onSelectDate(date) } else Modifier)
                         .background(
                             when {
                                 isSelected -> AppBlue
-                                dayBalance != null -> Color(0xFFEAF3FF)
+                                isToday -> Color(0xFFDCEBFF)
+                                dayProjection?.events?.isNotEmpty() == true -> Color(0xFFEAF3FF)
                                 else -> Color.Transparent
                             },
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text(day, color = if (isSelected) Color.White else AppInk, fontWeight = if (dayBalance != null) FontWeight.Bold else FontWeight.Normal)
-                        dayBalance?.let {
+                        Text(
+                            day,
+                            color = if (isSelected) Color.White else AppInk,
+                            fontWeight = if (isToday || dayProjection?.events?.isNotEmpty() == true) FontWeight.Bold else FontWeight.Normal,
+                        )
+                        dayProjection?.takeIf { it.events.isNotEmpty() }?.let {
                             Text(
                                 it.balanceInCents.compactMoneyLabel(),
                                 color = if (isSelected) Color.White else if (it.hasNegativeChange && !it.hasPositiveChange) AppRed else AppGreen,
@@ -451,35 +510,47 @@ private fun PrimaryButton(onClick: () -> Unit, modifier: Modifier = Modifier, te
     }
 }
 
-private data class CalendarEvent(val date: LocalDate, val amountInCents: Long)
+private data class CalendarEvent(val date: LocalDate, val title: String, val amountInCents: Long)
 
-private fun calendarBalances(state: PaycheckPilotUiState, month: YearMonth, today: LocalDate): Map<LocalDate, DayBalance> {
+private fun calendarProjections(state: PaycheckPilotUiState, month: YearMonth, today: LocalDate): Map<LocalDate, DayProjection> {
     val settings = state.settings ?: return emptyMap()
     val start = maxOf(today, month.atDay(1))
     val end = month.atEndOfMonth()
     if (start.isAfter(end)) return emptyMap()
 
-    val events = buildList {
+    val events = calendarEvents(state, start, end).groupBy { it.date }
+
+    var runningBalance = settings.currentBalanceInCents
+    return generateSequence(start) { it.plusDays(1) }
+        .takeWhile { !it.isAfter(end) }
+        .associateWith { date ->
+            val dayEvents = events[date].orEmpty()
+            dayEvents.forEach { runningBalance += it.amountInCents }
+            DayProjection(
+                balanceInCents = runningBalance,
+                hasPositiveChange = dayEvents.any { it.amountInCents > 0 },
+                hasNegativeChange = dayEvents.any { it.amountInCents < 0 },
+                events = dayEvents,
+            )
+        }
+}
+
+private fun calendarEvents(state: PaycheckPilotUiState, start: LocalDate, end: LocalDate): List<CalendarEvent> {
+    val settings = state.settings ?: return emptyList()
+    return buildList {
         paydayDatesInRange(settings, start, end).forEach {
-            add(CalendarEvent(it, settings.estimatedPaycheckInCents))
+            add(CalendarEvent(it, "Payday", settings.estimatedPaycheckInCents))
         }
         state.bills.filterNot { it.isPaid }.forEach { bill ->
             billDatesInRange(bill.dueDate, bill.repeatType, start, end).forEach {
-                add(CalendarEvent(it, -bill.amountInCents))
+                add(CalendarEvent(it, bill.name, -bill.amountInCents))
             }
         }
-    }.groupBy { it.date }.toSortedMap()
-
-    var runningBalance = settings.currentBalanceInCents
-    return events.mapValues { (_, dayEvents) ->
-        dayEvents.forEach { runningBalance += it.amountInCents }
-        DayBalance(
-            balanceInCents = runningBalance,
-            hasPositiveChange = dayEvents.any { it.amountInCents > 0 },
-            hasNegativeChange = dayEvents.any { it.amountInCents < 0 },
-        )
     }
 }
+
+private fun Long.signedMoneyLabel(): String =
+    if (this >= 0) "+${moneyLabel()}" else "-${kotlin.math.abs(this).moneyLabel()}"
 
 private fun paydayDatesInRange(settings: UserBudgetSettings, start: LocalDate, end: LocalDate): List<LocalDate> {
     var date = settings.nextPayday
