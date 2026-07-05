@@ -12,8 +12,8 @@ android {
         applicationId = "com.paycheckpilot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.0.2-ui-calendar"
+        versionCode = 4
+        versionName = "1.0.3-calendar-fix"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

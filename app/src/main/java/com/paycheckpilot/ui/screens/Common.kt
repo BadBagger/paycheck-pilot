@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.paycheckpilot.domain.BudgetCalculator
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 @Composable
 fun ScreenScaffold(title: String, content: @Composable ColumnScope.() -> Unit) {
@@ -187,7 +187,7 @@ fun date(text: String, fallback: LocalDate = LocalDate.now()): LocalDate = runCa
 fun Long.moneyLabel(): String = BudgetCalculator.formatMoney(this)
 
 private fun LocalDate.toEpochMillis(): Long =
-    atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
 private fun Long.toLocalDate(): LocalDate =
-    Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
+    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
