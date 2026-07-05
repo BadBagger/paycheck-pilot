@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,7 +47,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.paycheckpilot.data.Bill
+import androidx.compose.ui.unit.sp
+import com.paycheckpilot.data.PayFrequency
+import com.paycheckpilot.data.RepeatType
+import com.paycheckpilot.data.UserBudgetSettings
 import com.paycheckpilot.ui.PaycheckPilotUiState
 import java.time.LocalDate
 import java.time.YearMonth
@@ -55,6 +60,15 @@ private val AppGreen = Color(0xFF18A957)
 private val AppRed = Color(0xFFE94350)
 private val AppYellow = Color(0xFFFFB300)
 private val AppInk = Color(0xFF09152F)
+private val AppMuted = Color(0xFF536072)
+private val AppPage = Color(0xFFF5F7FB)
+private val AppCard = Color.White
+
+private data class DayBalance(
+    val balanceInCents: Long,
+    val hasPositiveChange: Boolean,
+    val hasNegativeChange: Boolean,
+)
 
 @Composable
 fun MockHomeScreen(
@@ -74,9 +88,9 @@ fun MockHomeScreen(
         CardBlock {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    Text("Next Payday", color = Color(0xFF536072))
+                    Text("Next Payday", color = AppMuted)
                     Text(settings.nextPayday.prettyDate(), style = MaterialTheme.typography.headlineSmall, color = AppInk, fontWeight = FontWeight.Bold)
-                    Text("${dashboard.daysUntilPayday} days away", color = Color(0xFF536072))
+                    Text("${dashboard.daysUntilPayday} days away", color = AppMuted)
                 }
                 IconBubble(Icons.Default.CalendarMonth, AppBlue)
             }
@@ -84,8 +98,8 @@ fun MockHomeScreen(
 
         CardBlock {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Estimated Paycheck", fontWeight = FontWeight.Bold)
-                Text(settings.payFrequency.label, color = Color(0xFF536072))
+                Text("Estimated Paycheck", color = AppInk, fontWeight = FontWeight.Bold)
+                Text(settings.payFrequency.label, color = AppMuted)
             }
             Text(settings.estimatedPaycheckInCents.moneyLabel(), style = MaterialTheme.typography.headlineMedium, color = AppGreen, fontWeight = FontWeight.Bold)
             LinearProgressIndicator(
@@ -94,7 +108,7 @@ fun MockHomeScreen(
                 color = AppGreen,
                 trackColor = Color(0xFFE8EDF4),
             )
-            Text("Estimate for next payday", color = Color(0xFF536072))
+            Text("Estimate for next payday", color = AppMuted)
         }
 
         QuickOverviewCard(
@@ -120,8 +134,8 @@ fun MockHomeScreen(
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(onClick = onCalendar, modifier = Modifier.weight(1f)) { Text("Calendar") }
-            Button(onClick = onWhatIf, modifier = Modifier.weight(1f)) { Text("What if") }
+            PrimaryButton(onClick = onCalendar, modifier = Modifier.weight(1f), text = "Calendar")
+            PrimaryButton(onClick = onWhatIf, modifier = Modifier.weight(1f), text = "What if")
         }
     }
 }
@@ -137,16 +151,16 @@ fun MockBudgetScreen(state: PaycheckPilotUiState, onManageBills: () -> Unit) {
         }
         CardBlock {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("This Paycheck", fontWeight = FontWeight.Bold)
-                Text(settings.nextPayday.prettyDate(), color = Color(0xFF536072))
+                Text("This Paycheck", color = AppInk, fontWeight = FontWeight.Bold)
+                Text(settings.nextPayday.prettyDate(), color = AppMuted)
             }
-            Text("Net Income", color = Color(0xFF536072))
+            Text("Net Income", color = AppMuted)
             Text(settings.estimatedPaycheckInCents.moneyLabel(), style = MaterialTheme.typography.headlineMedium, color = AppGreen, fontWeight = FontWeight.Bold)
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(progress = { 0.75f }, modifier = Modifier.size(150.dp), strokeWidth = 18.dp, color = AppBlue, trackColor = Color(0xFFE8EDF4))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(dashboard.safeToSpendInCents.moneyLabel(), fontWeight = FontWeight.Bold)
-                    Text("Safe to spend", color = Color(0xFF536072))
+                    Text(dashboard.safeToSpendInCents.moneyLabel(), color = AppInk, fontWeight = FontWeight.Bold)
+                    Text("Safe to spend", color = AppMuted)
                 }
             }
             BudgetLine("Bills", dashboard.billsDueBeforePaydayInCents, 0.40f, AppRed, Icons.Default.AccountBalanceWallet)
@@ -154,7 +168,11 @@ fun MockBudgetScreen(state: PaycheckPilotUiState, onManageBills: () -> Unit) {
             BudgetLine("Buffer", settings.safetyBufferInCents, 0.14f, AppGreen, Icons.Default.Savings)
             BudgetLine("Free to Use", dashboard.safeToSpendInCents, 0.20f, AppYellow, Icons.Default.CheckCircle)
         }
-        Button(onClick = onManageBills, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onManageBills,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF83D8C5), contentColor = AppInk),
+        ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Text("Manage Bills")
         }
@@ -165,14 +183,15 @@ fun MockBudgetScreen(state: PaycheckPilotUiState, onManageBills: () -> Unit) {
 fun MockCalendarScreen(state: PaycheckPilotUiState) {
     val today = LocalDate.now()
     val month = YearMonth.from(state.settings?.nextPayday ?: today)
+    val balances = calendarBalances(state, month, today)
     MockScreen {
         CardBlock {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("<", color = Color(0xFF536072), style = MaterialTheme.typography.titleLarge)
+                Text("<", color = AppMuted, style = MaterialTheme.typography.titleLarge)
                 Text("${month.month.name.lowercase().replaceFirstChar { it.titlecase() }} ${month.year}", color = AppInk, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(">", color = Color(0xFF536072), style = MaterialTheme.typography.titleLarge)
+                Text(">", color = AppMuted, style = MaterialTheme.typography.titleLarge)
             }
-            CalendarGrid(month, state.settings?.nextPayday)
+            CalendarGrid(month, state.settings?.nextPayday, balances)
         }
         CardBlock {
             Text("Upcoming", color = AppInk, fontWeight = FontWeight.Bold)
@@ -194,9 +213,9 @@ fun MockGoalsScreen(state: PaycheckPilotUiState) {
         CardBlock {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Overall Progress", fontWeight = FontWeight.Bold)
+                    Text("Overall Progress", color = AppInk, fontWeight = FontWeight.Bold)
                     Text("68%", style = MaterialTheme.typography.headlineLarge, color = AppGreen, fontWeight = FontWeight.Bold)
-                    Text("You're on track!", color = Color(0xFF536072))
+                    Text("You're on track!", color = AppMuted)
                 }
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(progress = { 0.68f }, modifier = Modifier.size(96.dp), strokeWidth = 10.dp, color = AppGreen, trackColor = Color(0xFFE8EDF4))
@@ -204,12 +223,12 @@ fun MockGoalsScreen(state: PaycheckPilotUiState) {
                 }
             }
             LinearProgressIndicator(progress = { 0.68f }, modifier = Modifier.fillMaxWidth(), color = AppGreen, trackColor = Color(0xFFE8EDF4))
-            Text("${buffer.moneyLabel()} buffer target in progress", color = Color(0xFF536072))
+            Text("${buffer.moneyLabel()} buffer target in progress", color = AppMuted)
         }
         GoalRow("Emergency Fund", "$1,020 / $1,500", "Stay prepared for the unexpected.", 0.68f, AppGreen, Icons.Default.Security)
         GoalRow("Vacation", "$600 / $1,200", "Your next adventure awaits.", 0.50f, AppBlue, Icons.Default.Savings)
         GoalRow("New Laptop", "$250 / $800", "Invest in your future.", 0.31f, Color(0xFF7E57C2), Icons.Default.AccountBalanceWallet)
-        Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = {}, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = AppBlue, contentColor = Color.White)) {
             Icon(Icons.Default.Add, contentDescription = null)
             Text("Add New Goal")
         }
@@ -220,13 +239,13 @@ fun MockGoalsScreen(state: PaycheckPilotUiState) {
 fun MockMoreScreen(onSettings: () -> Unit) {
     MockScreen {
         Text("Settings & Security", style = MaterialTheme.typography.headlineMedium, color = AppInk, fontWeight = FontWeight.Bold)
-        Text("Your data. Your device. Your control.", color = Color(0xFF536072))
+        Text("Your data. Your device. Your control.", color = AppMuted)
         CardBlock(containerColor = Color(0xFFEAF3FF)) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconBubble(Icons.Default.Security, AppBlue)
                 Column {
                     Text("100% Private", color = AppInk, fontWeight = FontWeight.Bold)
-                    Text("All your data stays on your device. We don't collect, store, or sell your personal information.", color = Color(0xFF536072))
+                    Text("All your data stays on your device. We don't collect, store, or sell your personal information.", color = AppMuted)
                     Text("Paycheck Pilot is a planning tool, not financial advice.", color = AppBlue, fontWeight = FontWeight.Bold)
                 }
             }
@@ -243,8 +262,9 @@ fun MockMoreScreen(onSettings: () -> Unit) {
 private fun MockScreen(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(Color(0xFFF5F7FB))
+            .background(AppPage)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
@@ -252,10 +272,10 @@ private fun MockScreen(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun CardBlock(containerColor: Color = Color.White, content: @Composable ColumnScope.() -> Unit) {
+private fun CardBlock(containerColor: Color = AppCard, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(containerColor = containerColor, contentColor = AppInk),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
@@ -279,7 +299,7 @@ private fun IconBubble(icon: ImageVector, color: Color) {
 private fun QuickOverviewCard(bills: Long, spending: Long, savings: Long, free: Long, onViewAll: () -> Unit) {
     CardBlock {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Quick Overview", fontWeight = FontWeight.Bold)
+            Text("Quick Overview", color = AppInk, fontWeight = FontWeight.Bold)
             TextButton(onClick = onViewAll) { Text("View All") }
         }
         BudgetLine("Bills", bills, 0.40f, AppRed, Icons.Default.AccountBalanceWallet)
@@ -296,16 +316,16 @@ private fun BudgetLine(label: String, amount: Long, percent: Float, color: Color
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(label, fontWeight = FontWeight.SemiBold)
-                Text(amount.moneyLabel(), fontWeight = FontWeight.SemiBold)
+                Text(amount.moneyLabel(), color = AppInk, fontWeight = FontWeight.SemiBold)
             }
             LinearProgressIndicator(progress = { percent }, modifier = Modifier.fillMaxWidth(), color = color, trackColor = Color(0xFFE8EDF4))
         }
-        Text("${(percent * 100).toInt()}%", color = Color(0xFF536072))
+        Text("${(percent * 100).toInt()}%", color = AppMuted)
     }
 }
 
 @Composable
-private fun CalendarGrid(month: YearMonth, selectedDate: LocalDate?) {
+private fun CalendarGrid(month: YearMonth, selectedDate: LocalDate?, balances: Map<LocalDate, DayBalance>) {
     val first = month.atDay(1)
     val offset = first.dayOfWeek.value % 7
     val days = List(offset) { "" } + (1..month.lengthOfMonth()).map { it.toString() }
@@ -316,18 +336,38 @@ private fun CalendarGrid(month: YearMonth, selectedDate: LocalDate?) {
     days.chunked(7).forEach { week ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             week.forEach { day ->
-                val isSelected = day.toIntOrNull() == selectedDate?.dayOfMonth && selectedDate?.month == month.month
+                val dayNumber = day.toIntOrNull()
+                val date = dayNumber?.let { month.atDay(it) }
+                val isSelected = date == selectedDate
+                val dayBalance = date?.let { balances[it] }
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(if (isSelected) AppBlue else Color.Transparent),
+                        .background(
+                            when {
+                                isSelected -> AppBlue
+                                dayBalance != null -> Color(0xFFEAF3FF)
+                                else -> Color.Transparent
+                            },
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(day, color = if (isSelected) Color.White else AppInk)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                        Text(day, color = if (isSelected) Color.White else AppInk, fontWeight = if (dayBalance != null) FontWeight.Bold else FontWeight.Normal)
+                        dayBalance?.let {
+                            Text(
+                                it.balanceInCents.compactMoneyLabel(),
+                                color = if (isSelected) Color.White else if (it.hasNegativeChange && !it.hasPositiveChange) AppRed else AppGreen,
+                                fontSize = 9.sp,
+                                lineHeight = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
                 }
             }
-            repeat(7 - week.size) { Spacer(Modifier.size(38.dp)) }
+            repeat(7 - week.size) { Spacer(Modifier.size(44.dp)) }
         }
     }
 }
@@ -337,8 +377,8 @@ private fun UpcomingRow(icon: ImageVector, title: String, date: String, amount: 
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         IconBubble(icon, color)
         Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.SemiBold)
-            Text(date, color = Color(0xFF536072))
+            Text(title, color = AppInk, fontWeight = FontWeight.SemiBold)
+            Text(date, color = AppMuted)
         }
         Text(amount, color = if (color == AppGreen) AppGreen else AppInk, fontWeight = FontWeight.SemiBold)
     }
@@ -351,12 +391,12 @@ private fun GoalRow(title: String, amount: String, subtitle: String, progress: F
             IconBubble(icon, color)
             Column(Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(title, fontWeight = FontWeight.Bold)
+                    Text(title, color = AppInk, fontWeight = FontWeight.Bold)
                     Text(amount, color = AppGreen, fontWeight = FontWeight.Bold)
                 }
-                Text("${(progress * 100).toInt()}%", color = Color(0xFF536072))
+                Text("${(progress * 100).toInt()}%", color = AppMuted)
                 LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = AppGreen, trackColor = Color(0xFFE8EDF4))
-                Text(subtitle, color = Color(0xFF536072))
+                Text(subtitle, color = AppMuted)
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = AppBlue)
         }
@@ -365,7 +405,7 @@ private fun GoalRow(title: String, amount: String, subtitle: String, progress: F
 
 @Composable
 private fun MoreRow(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = AppCard, contentColor = AppInk)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -375,8 +415,8 @@ private fun MoreRow(icon: ImageVector, title: String, subtitle: String, onClick:
         ) {
             IconBubble(icon, AppBlue)
             Column(Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = Color(0xFF536072))
+                Text(title, color = AppInk, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = AppMuted)
             }
             TextButton(onClick = onClick) {
                 Icon(Icons.Default.ChevronRight, contentDescription = null)
@@ -387,3 +427,94 @@ private fun MoreRow(icon: ImageVector, title: String, subtitle: String, onClick:
 
 private fun LocalDate.prettyDate(): String =
     "${month.name.lowercase().replaceFirstChar { it.titlecase() }} $dayOfMonth, $year"
+
+@Composable
+private fun PrimaryButton(onClick: () -> Unit, modifier: Modifier = Modifier, text: String) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = AppBlue, contentColor = Color.White),
+    ) {
+        Text(text)
+    }
+}
+
+private data class CalendarEvent(val date: LocalDate, val amountInCents: Long)
+
+private fun calendarBalances(state: PaycheckPilotUiState, month: YearMonth, today: LocalDate): Map<LocalDate, DayBalance> {
+    val settings = state.settings ?: return emptyMap()
+    val start = maxOf(today, month.atDay(1))
+    val end = month.atEndOfMonth()
+    if (start.isAfter(end)) return emptyMap()
+
+    val events = buildList {
+        paydayDatesInRange(settings, start, end).forEach {
+            add(CalendarEvent(it, settings.estimatedPaycheckInCents))
+        }
+        state.bills.filterNot { it.isPaid }.forEach { bill ->
+            billDatesInRange(bill.dueDate, bill.repeatType, start, end).forEach {
+                add(CalendarEvent(it, -bill.amountInCents))
+            }
+        }
+    }.groupBy { it.date }.toSortedMap()
+
+    var runningBalance = settings.currentBalanceInCents
+    return events.mapValues { (_, dayEvents) ->
+        dayEvents.forEach { runningBalance += it.amountInCents }
+        DayBalance(
+            balanceInCents = runningBalance,
+            hasPositiveChange = dayEvents.any { it.amountInCents > 0 },
+            hasNegativeChange = dayEvents.any { it.amountInCents < 0 },
+        )
+    }
+}
+
+private fun paydayDatesInRange(settings: UserBudgetSettings, start: LocalDate, end: LocalDate): List<LocalDate> {
+    var date = settings.nextPayday
+    while (date.isAfter(start)) {
+        val previous = date.minusPayPeriod(settings.payFrequency)
+        if (!previous.isBefore(start.minusDays(40))) date = previous else break
+    }
+    while (date.isBefore(start)) date = date.plusPayPeriod(settings.payFrequency)
+    return generateSequence(date) { it.plusPayPeriod(settings.payFrequency) }
+        .takeWhile { !it.isAfter(end) }
+        .toList()
+}
+
+private fun billDatesInRange(firstDueDate: LocalDate, repeatType: RepeatType, start: LocalDate, end: LocalDate): List<LocalDate> {
+    if (repeatType == RepeatType.None) return listOf(firstDueDate).filter { !it.isBefore(start) && !it.isAfter(end) }
+    var date = firstDueDate
+    while (date.isBefore(start)) date = date.plusRepeat(repeatType)
+    return generateSequence(date) { it.plusRepeat(repeatType) }
+        .takeWhile { !it.isAfter(end) }
+        .toList()
+}
+
+private fun LocalDate.plusPayPeriod(frequency: PayFrequency): LocalDate = when (frequency) {
+    PayFrequency.Weekly -> plusWeeks(1)
+    PayFrequency.Biweekly -> plusWeeks(2)
+    PayFrequency.TwiceMonthly -> plusDays(15)
+    PayFrequency.Monthly -> plusMonths(1)
+}
+
+private fun LocalDate.minusPayPeriod(frequency: PayFrequency): LocalDate = when (frequency) {
+    PayFrequency.Weekly -> minusWeeks(1)
+    PayFrequency.Biweekly -> minusWeeks(2)
+    PayFrequency.TwiceMonthly -> minusDays(15)
+    PayFrequency.Monthly -> minusMonths(1)
+}
+
+private fun LocalDate.plusRepeat(repeatType: RepeatType): LocalDate = when (repeatType) {
+    RepeatType.None -> this
+    RepeatType.Weekly -> plusWeeks(1)
+    RepeatType.Biweekly -> plusWeeks(2)
+    RepeatType.Monthly -> plusMonths(1)
+    RepeatType.Yearly -> plusYears(1)
+}
+
+private fun Long.compactMoneyLabel(): String {
+    val sign = if (this < 0) "-" else ""
+    val absCents = kotlin.math.abs(this)
+    val dollars = absCents / 100
+    return if (dollars >= 1_000) "$sign\$${dollars / 1_000}k" else "$sign\$$dollars"
+}
