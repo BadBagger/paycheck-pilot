@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8FAF9"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bills before payday"
+        android:textColor="#1F2A26"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Due"
+                android:textColor="#52645E"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_bills_total"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#1F2A26"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Left after bills"
+                android:textColor="#52645E"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_left_after_bills"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#1E6F5C"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_upcoming_bills"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:text="No bills loaded yet"
+        android:textColor="#1F2A26"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Paycheck Pilot"
+        android:textColor="#52645E"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_setup_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tap to set up"
+        android:textColor="#8A5E00"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

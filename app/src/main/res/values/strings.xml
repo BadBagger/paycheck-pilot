@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Paycheck Pilot</string>
+    <string name="safe_to_spend_widget_description">Shows safe-to-spend money until payday.</string>
+    <string name="bills_before_payday_widget_description">Shows bills due before the next payday.</string>
+</resources>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1E6F5C"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Safe to spend"
+        android:textColor="#EAF6F2"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_safe_amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="--"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Open Paycheck Pilot"
+        android:textColor="#EAF6F2"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_setup_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Tap to set up"
+        android:textColor="#F7D78A"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/widget_days"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="--"
+        android:textColor="#C9E8DD"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_payday"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="--"
+        android:textColor="#C9E8DD"
+        android:textSize="12sp" />
+</LinearLayout>
