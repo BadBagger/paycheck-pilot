@@ -7,3 +7,7 @@ local.properties
 *.aab
 *.jks
 *.keystore
+keystore.properties
+signing.properties
+*password*
+*credential*
