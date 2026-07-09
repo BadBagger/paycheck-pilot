@@ -21,4 +21,11 @@ class Converters {
 
     @TypeConverter
     fun stringToRepeatType(value: String?): RepeatType? = value?.let(RepeatType::valueOf)
+
+    @TypeConverter
+    fun bankConnectionStatusToString(value: BankConnectionStatus?): String? = value?.name
+
+    @TypeConverter
+    fun stringToBankConnectionStatus(value: String?): BankConnectionStatus? =
+        value?.let(BankConnectionStatus::valueOf)
 }

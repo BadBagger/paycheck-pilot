@@ -1,7 +1,9 @@
 package com.paycheckpilot
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -47,15 +50,28 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import com.plaid.link.FastOpenPlaidLink
+import com.plaid.link.Plaid
+import com.plaid.link.linkTokenConfiguration
+import com.plaid.link.result.LinkExit
+import com.plaid.link.result.LinkSuccess
+import com.paycheckpilot.data.PlaidAccountMetadata
+import com.paycheckpilot.data.PlaidInstitutionMetadata
+import com.paycheckpilot.data.PlaidLinkMetadata
 import com.paycheckpilot.ui.AppViewModel
+import com.paycheckpilot.ui.screens.BankSafeToSpendScreen
 import com.paycheckpilot.ui.screens.BillsScreen
+import com.paycheckpilot.ui.screens.BillsBeforePaydayScreen
+import com.paycheckpilot.ui.screens.ConnectedAccountsScreen
 import com.paycheckpilot.ui.screens.HomeScreen
+import com.paycheckpilot.ui.screens.IncomeHistoryScreen
 import com.paycheckpilot.ui.screens.MockBudgetScreen
 import com.paycheckpilot.ui.screens.MockCalendarScreen
 import com.paycheckpilot.ui.screens.MockGoalsScreen
 import com.paycheckpilot.ui.screens.MockHomeScreen
 import com.paycheckpilot.ui.screens.MockMoreScreen
 import com.paycheckpilot.ui.screens.PaychecksScreen
+import com.paycheckpilot.ui.screens.PaycheckDetectionScreen
 import com.paycheckpilot.ui.screens.SettingsScreen
 import com.paycheckpilot.ui.screens.SetupScreen
 import com.paycheckpilot.ui.screens.TimelineScreen
@@ -94,6 +110,11 @@ private val drawerDestinations = listOf(
     Destination("calendar", "Calendar", { Icon(Icons.Default.CalendarMonth, contentDescription = null) }),
     Destination("bills", "Bills", { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }),
     Destination("paychecks", "Income", { Icon(Icons.Default.Event, contentDescription = null) }),
+    Destination("accounts", "Connected accounts", { Icon(Icons.Default.Settings, contentDescription = null) }),
+    Destination("detected-paychecks", "Paycheck detection", { Icon(Icons.Default.Event, contentDescription = null) }),
+    Destination("income-history", "Income history", { Icon(Icons.Default.BarChart, contentDescription = null) }),
+    Destination("detected-bills", "Bills before payday", { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }),
+    Destination("bank-safe", "Bank safe to spend", { Icon(Icons.Default.TrackChanges, contentDescription = null) }),
     Destination("timeline", "Timeline", { Icon(Icons.Default.BarChart, contentDescription = null) }),
     Destination("whatif", "What if", { Icon(Icons.Default.TrackChanges, contentDescription = null) }),
     Destination("settings", "Settings", { Icon(Icons.Default.Settings, contentDescription = null) }),
@@ -107,6 +128,43 @@ fun PaycheckPilotApp(viewModel: AppViewModel = viewModel()) {
     val backStack by navController.currentBackStackEntryAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val application = LocalContext.current.applicationContext as Application
+    val plaidLauncher = rememberLauncherForActivityResult(FastOpenPlaidLink()) { result ->
+        when (result) {
+            is LinkSuccess -> {
+                val publicToken = result.publicToken
+                if (publicToken.isNullOrBlank()) {
+                    viewModel.handlePlaidExit("Plaid Link completed without a public token. Try connecting again.")
+                } else {
+                    viewModel.handlePlaidSuccess(publicToken, result.toPaycheckMetadata())
+                }
+            }
+            is LinkExit -> {
+                val errorCode = result.error?.errorCode?.toString().orEmpty()
+                viewModel.handlePlaidExit(
+                    message = result.toUserMessage(),
+                    permissionRevoked = errorCode.contains("REVOKED", ignoreCase = true) ||
+                        errorCode.contains("RELINK", ignoreCase = true),
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        Plaid.setLinkEventListener { }
+    }
+
+    LaunchedEffect(state.pendingPlaidLinkToken) {
+        val token = state.pendingPlaidLinkToken ?: return@LaunchedEffect
+        val handler = Plaid.create(
+            application,
+            linkTokenConfiguration {
+                this.token = token
+            },
+        )
+        plaidLauncher.launch(handler)
+        viewModel.markPlaidLinkLaunched()
+    }
 
     LaunchedEffect(state.settings, backStack?.destination?.route) {
         val route = backStack?.destination?.route
@@ -212,9 +270,40 @@ fun PaycheckPilotApp(viewModel: AppViewModel = viewModel()) {
                 composable("more") { MockMoreScreen(onSettings = { navController.navigate("settings") }) }
                 composable("bills") { BillsScreen(state, viewModel::saveBill, viewModel::deleteBill, viewModel::setBillPaid) }
                 composable("paychecks") { PaychecksScreen(state, viewModel::savePaycheck, viewModel::deletePaycheck) }
+                composable("accounts") {
+                    ConnectedAccountsScreen(
+                        state = state,
+                        onConnect = viewModel::startPlaidLink,
+                        onSync = viewModel::syncBankAccounts,
+                        onDemo = viewModel::loadBankDemoMode,
+                        onDisconnect = viewModel::disconnectAccount,
+                        onDeleteLocal = { viewModel.deleteBankData(deleteBackend = false) },
+                        onDeleteBackend = { viewModel.deleteBankData(deleteBackend = true) },
+                        onBackendUrlChange = viewModel::updateBackendUrl,
+                    )
+                }
+                composable("detected-paychecks") {
+                    PaycheckDetectionScreen(state, onApplyPaycheck = viewModel::applyDetectedPaycheck)
+                }
+                composable("income-history") { IncomeHistoryScreen(state) }
+                composable("detected-bills") {
+                    BillsBeforePaydayScreen(state, onApplyBill = viewModel::applyDetectedBill)
+                }
+                composable("bank-safe") { BankSafeToSpendScreen(state) }
                 composable("timeline") { TimelineScreen(state) }
                 composable("whatif") { WhatIfScreen(state, viewModel::applyEarlyBillPayment) }
-                composable("settings") { SettingsScreen(state, viewModel::saveSettings, viewModel::addSampleData) }
+                composable("settings") {
+                    SettingsScreen(
+                        state = state,
+                        onSave = viewModel::saveSettings,
+                        onSample = viewModel::addSampleData,
+                        onResetDemo = viewModel::resetDemoData,
+                        onSimulateNextPayday = viewModel::simulateNextPayday,
+                        onSimulateLowerPaycheck = viewModel::simulateLowerPaycheck,
+                        onSimulateMissingPaycheck = viewModel::simulateMissingPaycheck,
+                        onSimulateBillBeforePayday = viewModel::simulateBillBeforePayday,
+                    )
+                }
             }
         }
     }
@@ -227,7 +316,42 @@ private fun topBarTitle(route: String?): String = when (route) {
     "more", "settings" -> "Paycheck Pilot"
     "bills" -> "Bills"
     "paychecks" -> "Income"
+    "accounts" -> "Connected Accounts"
+    "detected-paychecks" -> "Paycheck Detection"
+    "income-history" -> "Income History"
+    "detected-bills" -> "Bills Before Payday"
+    "bank-safe" -> "Safe to Spend"
     "timeline" -> "Timeline"
     "whatif" -> "What if"
     else -> "Paycheck Pilot"
+}
+
+private fun LinkSuccess.toPaycheckMetadata(): PlaidLinkMetadata =
+    PlaidLinkMetadata(
+        institution = metadata.institution?.let {
+            PlaidInstitutionMetadata(id = it.id, name = it.name)
+        },
+        accounts = metadata.accounts.map {
+            PlaidAccountMetadata(
+                id = it.id,
+                name = it.name ?: "Account",
+                mask = it.mask,
+                type = it.subtype.accountType.json,
+                subtype = it.subtype.json,
+            )
+        },
+    )
+
+private fun LinkExit.toUserMessage(): String {
+    val error = error
+    if (error != null) {
+        error.displayMessage?.takeIf { it.isNotBlank() }?.let { return it }
+        error.errorMessage?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    return when (metadata.status?.jsonValue) {
+        "institution_not_supported" -> "Institution connection failed or is not supported."
+        "institution_not_found" -> "Institution not found. Try searching another bank or card issuer."
+        "requires_credentials" -> "Plaid Link was canceled before connection finished."
+        else -> "Plaid Link was canceled. Paycheck planning still works."
+    }
 }

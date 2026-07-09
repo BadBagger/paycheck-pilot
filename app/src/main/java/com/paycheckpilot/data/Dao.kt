@@ -17,6 +17,9 @@ interface UserBudgetSettingsDao {
 
     @Upsert
     suspend fun upsert(settings: UserBudgetSettings)
+
+    @Query("DELETE FROM user_budget_settings")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -35,6 +38,9 @@ interface BillDao {
 
     @Query("UPDATE bills SET isPaid = :isPaid WHERE id = :billId")
     suspend fun setPaid(billId: Long, isPaid: Boolean)
+
+    @Query("DELETE FROM bills")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -50,4 +56,58 @@ interface PaycheckDao {
 
     @Delete
     suspend fun delete(paycheck: Paycheck)
+
+    @Query("DELETE FROM paychecks")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface BankDao {
+    @Query("SELECT * FROM connected_accounts ORDER BY institutionName ASC, accountName ASC")
+    fun observeConnectedAccounts(): Flow<List<ConnectedAccount>>
+
+    @Query("SELECT * FROM detected_paychecks ORDER BY date DESC")
+    fun observeDetectedPaychecks(): Flow<List<DetectedPaycheck>>
+
+    @Query("SELECT * FROM detected_bills ORDER BY nextDueDate ASC, name ASC")
+    fun observeDetectedBills(): Flow<List<DetectedBill>>
+
+    @Query("SELECT * FROM bank_summary WHERE id = 1")
+    fun observeBankSummary(): Flow<BankSummarySnapshot?>
+
+    @Upsert
+    suspend fun upsertAccounts(accounts: List<ConnectedAccount>)
+
+    @Upsert
+    suspend fun upsertDetectedPaychecks(paychecks: List<DetectedPaycheck>)
+
+    @Upsert
+    suspend fun upsertDetectedBills(bills: List<DetectedBill>)
+
+    @Upsert
+    suspend fun upsertSummary(snapshot: BankSummarySnapshot)
+
+    @Query("DELETE FROM connected_accounts WHERE accountId = :accountId")
+    suspend fun deleteAccountById(accountId: String)
+
+    @Query("UPDATE connected_accounts SET status = :status WHERE accountId = :accountId")
+    suspend fun setAccountStatus(accountId: String, status: BankConnectionStatus)
+
+    @Query("UPDATE connected_accounts SET status = :status WHERE status != 'Disconnected'")
+    suspend fun setAllActiveStatuses(status: BankConnectionStatus)
+
+    @Query("UPDATE connected_accounts SET lastSyncedAtMillis = :syncedAt, status = 'Connected' WHERE status != 'Disconnected'")
+    suspend fun markAllSynced(syncedAt: Long)
+
+    @Query("DELETE FROM connected_accounts")
+    suspend fun deleteAllAccounts()
+
+    @Query("DELETE FROM detected_paychecks")
+    suspend fun deleteAllDetectedPaychecks()
+
+    @Query("DELETE FROM detected_bills")
+    suspend fun deleteAllDetectedBills()
+
+    @Query("DELETE FROM bank_summary")
+    suspend fun deleteSummary()
 }

@@ -24,6 +24,11 @@ fun SettingsScreen(
     state: PaycheckPilotUiState,
     onSave: (Long, Long, PayFrequency, java.time.LocalDate, Long, Long?, Double?) -> Unit,
     onSample: () -> Unit,
+    onResetDemo: () -> Unit,
+    onSimulateNextPayday: () -> Unit,
+    onSimulateLowerPaycheck: () -> Unit,
+    onSimulateMissingPaycheck: () -> Unit,
+    onSimulateBillBeforePayday: () -> Unit,
 ) {
     val settings = state.settings
     var balance by remember(settings) { mutableStateOf(settings?.currentBalanceInCents?.let { it / 100.0 }?.toString().orEmpty()) }
@@ -58,12 +63,23 @@ fun SettingsScreen(
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Save settings") }
-        TextButton(onClick = onSample, modifier = Modifier.fillMaxWidth()) { Text("Load sample data") }
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Developer demo mode")
+                Text("Demo mode is available while bank sync is not configured.")
+                Button(onClick = onSample, modifier = Modifier.fillMaxWidth()) { Text("Use demo financial data") }
+                TextButton(onClick = onResetDemo, modifier = Modifier.fillMaxWidth()) { Text("Reset demo data") }
+                TextButton(onClick = onSimulateNextPayday, modifier = Modifier.fillMaxWidth()) { Text("Simulate next payday") }
+                TextButton(onClick = onSimulateLowerPaycheck, modifier = Modifier.fillMaxWidth()) { Text("Simulate lower paycheck") }
+                TextButton(onClick = onSimulateMissingPaycheck, modifier = Modifier.fillMaxWidth()) { Text("Simulate missing paycheck") }
+                TextButton(onClick = onSimulateBillBeforePayday, modifier = Modifier.fillMaxWidth()) { Text("Simulate bill before payday") }
+            }
+        }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("About")
-                Text("Paycheck Pilot is a planning tool. It does not provide financial advice and does not connect to your bank.")
-                Text("Storage: local device database only. No Firebase, bank login, Plaid, cloud account, paid APIs, or ads.")
+                Text("Paycheck Pilot is a planning tool. It does not provide financial advice and does not connect to your bank directly.")
+                Text("Plaid Link is optional for bank sync. Demo mode and manual planning work without Plaid credentials, a hosted backend, or a real bank account.")
             }
         }
     }

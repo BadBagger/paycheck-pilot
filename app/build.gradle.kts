@@ -14,6 +14,7 @@ val keystoreProperties = Properties().apply {
 }
 
 fun signingProperty(name: String): String? = keystoreProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+fun escapedBuildString(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
 
 gradle.taskGraph.whenReady {
     val releaseRequested = allTasks.any { it.name.contains("Release") }
@@ -34,10 +35,15 @@ android {
         applicationId = "com.paycheckpilot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0.6-release-signed"
+        versionCode = 8
+        versionName = "1.0.7-demo-financial-data"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "PAYCHECK_BACKEND_URL",
+            "\"${escapedBuildString((findProperty("PAYCHECK_BACKEND_URL") as? String) ?: System.getenv("PAYCHECK_BACKEND_URL") ?: "https://paycheck-pilot-backend.example.com")}\"",
+        )
     }
 
     signingConfigs {
@@ -69,6 +75,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -89,6 +96,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.plaid.link)
 
     ksp(libs.androidx.room.compiler)
 
