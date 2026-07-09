@@ -115,8 +115,10 @@ async function handleExchangePublicToken(req, res, userId) {
     return sendJson(res, 400, { error: "public_token_required" });
   }
   requireUser(store, userId);
-  const institutionId = `inst-${crypto.randomUUID()}`;
   if (config.mockMode) {
+    const existingInstitution = Object.values(store.connectedInstitutions)
+      .find((item) => item.userId === userId && item.plaidItemId === "mock-item");
+    const institutionId = existingInstitution?.id || `inst-${crypto.randomUUID()}`;
     store.connectedInstitutions[institutionId] = {
       id: institutionId,
       userId,
@@ -128,7 +130,9 @@ async function handleExchangePublicToken(req, res, userId) {
       createdAt: nowIso(),
       disconnectedAt: null
     };
-    const accountId = `acct-${crypto.randomUUID()}`;
+    const existingAccount = Object.values(store.connectedAccounts)
+      .find((item) => item.userId === userId && item.institutionId === institutionId && item.plaidAccountId === "mock-account");
+    const accountId = existingAccount?.id || `acct-${crypto.randomUUID()}`;
     store.connectedAccounts[accountId] = {
       id: accountId,
       userId,
@@ -146,6 +150,7 @@ async function handleExchangePublicToken(req, res, userId) {
     saveStore(store);
     return sendJson(res, 200, { institutionId, accounts: safeAccounts(userId) });
   }
+  const institutionId = `inst-${crypto.randomUUID()}`;
   const exchange = await plaidPost("/item/public_token/exchange", { public_token: body.public_token });
   store.connectedInstitutions[institutionId] = {
     id: institutionId,

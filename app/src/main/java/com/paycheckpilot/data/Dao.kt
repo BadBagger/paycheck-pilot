@@ -30,6 +30,9 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE dueDate <= :payday ORDER BY dueDate ASC, name ASC")
     fun observeBillsDueBefore(payday: LocalDate): Flow<List<Bill>>
 
+    @Query("SELECT * FROM bills WHERE name = :name AND amountInCents = :amountInCents AND dueDate = :dueDate LIMIT 1")
+    suspend fun findMatchingBill(name: String, amountInCents: Long, dueDate: LocalDate): Bill?
+
     @Upsert
     suspend fun upsert(bill: Bill)
 
@@ -50,6 +53,9 @@ interface PaycheckDao {
 
     @Query("SELECT * FROM paychecks WHERE date >= :today ORDER BY date ASC LIMIT 1")
     fun observeNextPaycheck(today: LocalDate): Flow<Paycheck?>
+
+    @Query("SELECT * FROM paychecks WHERE date = :date AND estimatedAmountInCents = :estimatedAmountInCents LIMIT 1")
+    suspend fun findMatchingPaycheck(date: LocalDate, estimatedAmountInCents: Long): Paycheck?
 
     @Upsert
     suspend fun upsert(paycheck: Paycheck)
@@ -105,8 +111,14 @@ interface BankDao {
     @Query("DELETE FROM detected_paychecks")
     suspend fun deleteAllDetectedPaychecks()
 
+    @Query("DELETE FROM detected_paychecks WHERE paycheckId = :paycheckId")
+    suspend fun deleteDetectedPaycheck(paycheckId: String)
+
     @Query("DELETE FROM detected_bills")
     suspend fun deleteAllDetectedBills()
+
+    @Query("DELETE FROM detected_bills WHERE billId = :billId")
+    suspend fun deleteDetectedBill(billId: String)
 
     @Query("DELETE FROM bank_summary")
     suspend fun deleteSummary()

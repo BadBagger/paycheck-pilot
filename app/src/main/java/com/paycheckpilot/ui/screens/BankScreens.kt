@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +56,7 @@ fun ConnectedAccountsScreen(
         it.accountId == BankConnectionRepository.CONNECTING_PLACEHOLDER_ID
     }
     var backendUrl by remember(state.backendUrl) { mutableStateOf(state.backendUrl) }
+    var disconnectingAccount by remember { mutableStateOf<ConnectedAccount?>(null) }
 
     LazyColumn(
         modifier = Modifier.padding(16.dp),
@@ -118,7 +120,7 @@ fun ConnectedAccountsScreen(
             item { EmptyState("No connected accounts yet. Demo Mode works without Plaid.") }
         } else {
             items(visibleAccounts, key = { it.accountId }) { account ->
-                ConnectedAccountCard(account, onDisconnect = { onDisconnect(account) })
+                ConnectedAccountCard(account, onDisconnect = { disconnectingAccount = account })
             }
         }
         item {
@@ -140,12 +142,40 @@ fun ConnectedAccountsScreen(
             }
         }
     }
+
+    disconnectingAccount?.let { account ->
+        AlertDialog(
+            onDismissRequest = { disconnectingAccount = null },
+            title = { Text("Disconnect ${account.institutionName}?") },
+            text = {
+                Text("You can keep imported paycheck and bill summaries for manual editing, or delete imported bank data from this app.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDisconnect(account)
+                        disconnectingAccount = null
+                    },
+                ) { Text("Keep imported data") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onDisconnect(account)
+                        onDeleteLocal()
+                        disconnectingAccount = null
+                    },
+                ) { Text("Delete imported data") }
+            },
+        )
+    }
 }
 
 @Composable
 fun PaycheckDetectionScreen(
     state: PaycheckPilotUiState,
     onApplyPaycheck: (DetectedPaycheck) -> Unit,
+    onExcludePaycheck: (DetectedPaycheck) -> Unit,
 ) {
     LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
@@ -156,7 +186,7 @@ fun PaycheckDetectionScreen(
             item { EmptyState("No paycheck deposits detected yet. Sync or use Demo Mode.") }
         } else {
             items(state.detectedPaychecks, key = { it.paycheckId }) { paycheck ->
-                DetectedPaycheckCard(paycheck, onApplyPaycheck)
+                DetectedPaycheckCard(paycheck, onApplyPaycheck, onExcludePaycheck)
             }
         }
     }
@@ -188,6 +218,7 @@ fun IncomeHistoryScreen(state: PaycheckPilotUiState) {
 fun BillsBeforePaydayScreen(
     state: PaycheckPilotUiState,
     onApplyBill: (DetectedBill) -> Unit,
+    onExcludeBill: (DetectedBill) -> Unit,
 ) {
     LazyColumn(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
@@ -202,7 +233,7 @@ fun BillsBeforePaydayScreen(
             item { EmptyState("No detected bills before payday.") }
         } else {
             items(bills, key = { it.billId }) { bill ->
-                DetectedBillCard(bill, onApplyBill)
+                DetectedBillCard(bill, onApplyBill, onExcludeBill)
             }
         }
     }
@@ -299,7 +330,11 @@ private fun ConnectedAccountCard(account: ConnectedAccount, onDisconnect: () -> 
 }
 
 @Composable
-private fun DetectedPaycheckCard(paycheck: DetectedPaycheck, onApply: (DetectedPaycheck) -> Unit) {
+private fun DetectedPaycheckCard(
+    paycheck: DetectedPaycheck,
+    onApply: (DetectedPaycheck) -> Unit,
+    onExclude: (DetectedPaycheck) -> Unit,
+) {
     Card {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -309,16 +344,25 @@ private fun DetectedPaycheckCard(paycheck: DetectedPaycheck, onApply: (DetectedP
                 }
                 Text(paycheck.amountInCents.moneyLabel(), fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = { onApply(paycheck) }) {
-                Icon(Icons.Default.Download, contentDescription = null)
-                Text("Add to income")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { onApply(paycheck) }) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Text("Confirm source")
+                }
+                TextButton(onClick = { onExclude(paycheck) }) {
+                    Text("Not income")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DetectedBillCard(bill: DetectedBill, onApply: (DetectedBill) -> Unit) {
+private fun DetectedBillCard(
+    bill: DetectedBill,
+    onApply: (DetectedBill) -> Unit,
+    onExclude: (DetectedBill) -> Unit,
+) {
     Card {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -328,9 +372,14 @@ private fun DetectedBillCard(bill: DetectedBill, onApply: (DetectedBill) -> Unit
                 }
                 Text(bill.amountInCents.moneyLabel(), fontWeight = FontWeight.Bold)
             }
-            TextButton(onClick = { onApply(bill) }) {
-                Icon(Icons.Default.Download, contentDescription = null)
-                Text("Add to bills")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { onApply(bill) }) {
+                    Icon(Icons.Default.Download, contentDescription = null)
+                    Text("Add to bills")
+                }
+                TextButton(onClick = { onExclude(bill) }) {
+                    Text("Exclude")
+                }
             }
         }
     }

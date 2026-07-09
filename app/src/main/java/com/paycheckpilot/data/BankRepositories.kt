@@ -103,6 +103,14 @@ class BankSyncRepository(
         bankDao.setAllActiveStatuses(BankConnectionStatus.SyncFailed)
     }
 
+    suspend fun excludeDetectedPaycheck(paycheckId: String) {
+        bankDao.deleteDetectedPaycheck(paycheckId)
+    }
+
+    suspend fun excludeDetectedBill(billId: String) {
+        bankDao.deleteDetectedBill(billId)
+    }
+
     suspend fun syncDemoData(
         settings: UserBudgetSettings? = null,
         scenario: DemoFinancialScenario = DemoFinancialScenario.Default,

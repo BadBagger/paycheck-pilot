@@ -410,26 +410,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun applyDetectedBill(detectedBill: DetectedBill) {
-        saveBill(
-            existing = null,
-            name = detectedBill.name,
-            amount = detectedBill.amountInCents,
-            dueDate = detectedBill.nextDueDate,
-            repeatType = detectedBill.cadence.toRepeatType(),
-            category = detectedBill.category.ifBlank { "Detected bill" },
-            notes = "Detected from connected account summary. Confidence ${(detectedBill.confidence * 100).toInt()}%.",
-        )
+        viewModelScope.launch {
+            repository.saveDetectedBill(detectedBill)
+            bankMessage.value = "${detectedBill.name} added to bills. Duplicate matches are updated instead of copied."
+        }
     }
 
     fun applyDetectedPaycheck(detectedPaycheck: DetectedPaycheck) {
-        savePaycheck(
-            existing = null,
-            date = detectedPaycheck.date,
-            estimatedAmount = detectedPaycheck.amountInCents,
-            actualAmount = detectedPaycheck.amountInCents,
-            hoursWorked = null,
-            notes = "Detected from ${detectedPaycheck.accountNickname}. Confidence ${(detectedPaycheck.confidence * 100).toInt()}%.",
-        )
+        viewModelScope.launch {
+            repository.saveDetectedPaycheck(detectedPaycheck)
+            bankMessage.value = "${detectedPaycheck.payerName} confirmed. You can edit amount, date, and notes in Income."
+        }
+    }
+
+    fun excludeDetectedBill(detectedBill: DetectedBill) = viewModelScope.launch {
+        bankSyncRepository.excludeDetectedBill(detectedBill.billId)
+        bankMessage.value = "${detectedBill.name} excluded from detected bills."
+    }
+
+    fun excludeDetectedPaycheck(detectedPaycheck: DetectedPaycheck) = viewModelScope.launch {
+        bankSyncRepository.excludeDetectedPaycheck(detectedPaycheck.paycheckId)
+        bankMessage.value = "${detectedPaycheck.payerName} excluded from paycheck candidates."
     }
 
     private suspend fun connectMockBackend() {

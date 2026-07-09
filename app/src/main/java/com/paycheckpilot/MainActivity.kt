@@ -283,11 +283,19 @@ fun PaycheckPilotApp(viewModel: AppViewModel = viewModel()) {
                     )
                 }
                 composable("detected-paychecks") {
-                    PaycheckDetectionScreen(state, onApplyPaycheck = viewModel::applyDetectedPaycheck)
+                    PaycheckDetectionScreen(
+                        state = state,
+                        onApplyPaycheck = viewModel::applyDetectedPaycheck,
+                        onExcludePaycheck = viewModel::excludeDetectedPaycheck,
+                    )
                 }
                 composable("income-history") { IncomeHistoryScreen(state) }
                 composable("detected-bills") {
-                    BillsBeforePaydayScreen(state, onApplyBill = viewModel::applyDetectedBill)
+                    BillsBeforePaydayScreen(
+                        state = state,
+                        onApplyBill = viewModel::applyDetectedBill,
+                        onExcludeBill = viewModel::excludeDetectedBill,
+                    )
                 }
                 composable("bank-safe") { BankSafeToSpendScreen(state) }
                 composable("timeline") { TimelineScreen(state) }

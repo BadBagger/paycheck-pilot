@@ -21,6 +21,44 @@ class BudgetRepository(
     suspend fun savePaycheck(paycheck: Paycheck) = paycheckDao.upsert(paycheck)
     suspend fun deletePaycheck(paycheck: Paycheck) = paycheckDao.delete(paycheck)
 
+    suspend fun saveDetectedBill(detectedBill: DetectedBill) {
+        val existing = billDao.findMatchingBill(detectedBill.name, detectedBill.amountInCents, detectedBill.nextDueDate)
+        saveBill(
+            Bill(
+                id = existing?.id ?: 0,
+                name = detectedBill.name,
+                amountInCents = detectedBill.amountInCents,
+                dueDate = detectedBill.nextDueDate,
+                repeatType = detectedBill.cadence.toRepeatType(),
+                category = detectedBill.category.ifBlank { "Detected bill" },
+                isPaid = existing?.isPaid ?: false,
+                notes = existing?.notes ?: "Detected from connected account summary. Confidence ${(detectedBill.confidence * 100).toInt()}%.",
+            ),
+        )
+    }
+
+    suspend fun saveDetectedPaycheck(detectedPaycheck: DetectedPaycheck) {
+        val existing = paycheckDao.findMatchingPaycheck(detectedPaycheck.date, detectedPaycheck.amountInCents)
+        savePaycheck(
+            Paycheck(
+                id = existing?.id ?: 0,
+                date = detectedPaycheck.date,
+                estimatedAmountInCents = detectedPaycheck.amountInCents,
+                actualAmountInCents = existing?.actualAmountInCents ?: detectedPaycheck.amountInCents,
+                hoursWorked = existing?.hoursWorked,
+                notes = existing?.notes ?: "Detected from ${detectedPaycheck.accountNickname}. Cadence ${detectedPaycheck.cadence}. Confidence ${(detectedPaycheck.confidence * 100).toInt()}%.",
+            ),
+        )
+    }
+
+    private fun String.toRepeatType(): RepeatType = when (lowercase()) {
+        "weekly" -> RepeatType.Weekly
+        "biweekly" -> RepeatType.Biweekly
+        "annual", "yearly" -> RepeatType.Yearly
+        "does not repeat", "none" -> RepeatType.None
+        else -> RepeatType.Monthly
+    }
+
     suspend fun addSampleData(today: LocalDate = LocalDate.now()) {
         addDemoFinancialData(DemoFinancialScenario.Default, today, resetExisting = false)
     }

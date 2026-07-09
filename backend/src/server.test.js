@@ -25,6 +25,16 @@ test("mock seed creates encrypted token and paycheck summary", () => {
   assert.ok(transactions.some((item) => item.merchantName === "Gas Station"));
 });
 
+test("mock seed is idempotent for the same account", () => {
+  const store = emptyStore();
+  seedMockData(store, "user-1", "inst-1", "acct-1");
+  const firstCount = Object.values(store.bankTransactions).length;
+  seedMockData(store, "user-1", "inst-1", "acct-1");
+  assert.equal(Object.values(store.connectedInstitutions).length, 1);
+  assert.equal(Object.values(store.connectedAccounts).length, 1);
+  assert.equal(Object.values(store.bankTransactions).length, firstCount);
+});
+
 test("detects paycheck deposits separately from recurring bills", () => {
   const txs = [
     tx("pay-1", "Payroll Deposit", -85000, "2026-01-03", "INCOME"),
