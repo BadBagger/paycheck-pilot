@@ -248,11 +248,9 @@ fun PaycheckPilotApp(viewModel: AppViewModel = viewModel()) {
                     SetupScreen(
                         onSave = { balance, buffer, frequency, payday, paycheck, hourly, hours ->
                             viewModel.saveSettings(balance, buffer, frequency, payday, paycheck, hourly, hours)
-                            navController.navigate("home") { popUpTo("setup") { inclusive = true } }
                         },
                         onSample = {
                             viewModel.addSampleData()
-                            navController.navigate("home") { popUpTo("setup") { inclusive = true } }
                         },
                     )
                 }

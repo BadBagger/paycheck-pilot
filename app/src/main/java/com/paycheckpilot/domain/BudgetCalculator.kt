@@ -5,6 +5,7 @@ import com.paycheckpilot.data.Paycheck
 import com.paycheckpilot.data.RepeatType
 import com.paycheckpilot.data.UserBudgetSettings
 import java.text.NumberFormat
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.Locale
@@ -124,9 +125,13 @@ object BudgetCalculator {
     }
 
     fun parseMoneyToCents(text: String): Long {
-        val clean = text.trim().replace("$", "").replace(",", "")
-        if (clean.isEmpty()) return 0
-        return (clean.toBigDecimal().movePointRight(2)).toLong()
+        val clean = text.replace(Regex("[^0-9.-]"), "")
+        if (clean.isEmpty() || clean.none(Char::isDigit)) return 0
+        return clean.toBigDecimalOrNull()
+            ?.movePointRight(2)
+            ?.setScale(0, RoundingMode.HALF_UP)
+            ?.toLong()
+            ?: 0
     }
 
     private fun billsDueBeforePayday(bills: List<Bill>, today: LocalDate, payday: LocalDate): List<Bill> =

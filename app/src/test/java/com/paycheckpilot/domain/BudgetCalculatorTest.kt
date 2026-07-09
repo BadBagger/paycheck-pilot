@@ -73,6 +73,13 @@ class BudgetCalculatorTest {
         assertTrue(result.isSafe)
     }
 
+    @Test
+    fun parseMoneyAcceptsCurrencyInputFromSetupFields() {
+        assertEquals(120_000, BudgetCalculator.parseMoneyToCents("$ 1200"))
+        assertEquals(150_050, BudgetCalculator.parseMoneyToCents("$1,500.50"))
+        assertEquals(0, BudgetCalculator.parseMoneyToCents("$"))
+    }
+
     private fun bill(
         name: String,
         amount: Long,

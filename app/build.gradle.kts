@@ -35,8 +35,8 @@ android {
         applicationId = "com.paycheckpilot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0.9-bank-sync-qa"
+        versionCode = 11
+        versionName = "1.0.10-setup-entry-fix"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField(

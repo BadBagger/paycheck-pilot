@@ -13,6 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.paycheckpilot.data.PayFrequency
 import java.time.LocalDate
@@ -38,8 +40,23 @@ fun SetupScreen(
         DateField("Next payday", payday, { payday = it })
         MoneyField("Estimated paycheck", paycheck, { paycheck = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(value = hourly, onValueChange = { hourly = it }, label = { Text("Hourly wage") }, prefix = { Text("$") }, modifier = Modifier.weight(1f), singleLine = true)
-            OutlinedTextField(value = hours, onValueChange = { hours = it }, label = { Text("Hours") }, modifier = Modifier.weight(1f), singleLine = true)
+            OutlinedTextField(
+                value = hourly,
+                onValueChange = { hourly = it },
+                label = { Text("Hourly wage") },
+                prefix = { Text("$") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = hours,
+                onValueChange = { hours = it },
+                label = { Text("Hours") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+            )
         }
         Button(
             onClick = {
