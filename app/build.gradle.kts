@@ -35,8 +35,8 @@ android {
         applicationId = "com.paycheckpilot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.0.10-setup-entry-fix"
+        versionCode = 12
+        versionName = "1.0.11-setup-input-fix"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField(
