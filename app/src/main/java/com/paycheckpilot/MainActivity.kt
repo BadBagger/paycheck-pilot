@@ -302,6 +302,7 @@ fun PaycheckPilotApp(viewModel: AppViewModel = viewModel()) {
                         onSimulateLowerPaycheck = viewModel::simulateLowerPaycheck,
                         onSimulateMissingPaycheck = viewModel::simulateMissingPaycheck,
                         onSimulateBillBeforePayday = viewModel::simulateBillBeforePayday,
+                        onMockPremiumChange = viewModel::setMockPremium,
                     )
                 }
             }

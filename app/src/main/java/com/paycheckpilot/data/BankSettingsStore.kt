@@ -12,10 +12,13 @@ class BankSettingsStore(context: Context) {
             ?.takeIf { it.isNotBlank() }
             ?: BuildConfig.PAYCHECK_BACKEND_URL,
     )
+    private val mockPremiumState = MutableStateFlow(prefs.getBoolean(KEY_MOCK_PREMIUM, false))
 
     val backendUrl: StateFlow<String> = backendUrlState
+    val mockPremiumEnabled: StateFlow<Boolean> = mockPremiumState
 
     fun currentBackendUrl(): String = backendUrlState.value
+    fun hasMockPremium(): Boolean = mockPremiumState.value
 
     fun updateBackendUrl(value: String) {
         val normalized = value.trim()
@@ -23,7 +26,13 @@ class BankSettingsStore(context: Context) {
         backendUrlState.value = normalized
     }
 
+    fun updateMockPremium(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_MOCK_PREMIUM, enabled).apply()
+        mockPremiumState.value = enabled
+    }
+
     companion object {
         private const val KEY_BACKEND_URL = "bank_backend_url"
+        private const val KEY_MOCK_PREMIUM = "mock_premium_enabled"
     }
 }

@@ -5,9 +5,9 @@
 - Name: Paycheck Pilot
 - Package: `com.paycheckpilot`
 - Repo: `https://github.com/BadBagger/paycheck-pilot`
-- Current release target: `v1.0.7-demo-financial-data`
-- Previous release: `v1.0.6-release-signed`
-- Release APK assets target: `PaycheckPilot.apk`, `PaycheckPilot-release-v1.0.7-demo-financial-data.apk`
+- Current release target: `v1.0.8-premium-bank-sync-plan`
+- Previous release: `v1.0.7-demo-financial-data`
+- Release APK assets target: `PaycheckPilot.apk`, `PaycheckPilot-release-v1.0.8-premium-bank-sync-plan.apk`
 - Release signing: local-only `keystore.properties`; release builds use the Smithware outside-Play release key for `com.paycheckpilot`.
 - Release SHA-256: `950e5e9346644cd910112f53e244cb4582059155bf65aaaaacd623bebd94873f`
 
@@ -19,10 +19,10 @@
 
 ## DevHub
 
-DevHub should list Paycheck Pilot with package `com.paycheckpilot`, repo `BadBagger/paycheck-pilot`, pinned release `v1.0.7-demo-financial-data`, and asset `PaycheckPilot.apk`.
+DevHub should list Paycheck Pilot with package `com.paycheckpilot`, repo `BadBagger/paycheck-pilot`, pinned release `v1.0.8-premium-bank-sync-plan`, and asset `PaycheckPilot.apk`.
 
 ## Current Update
 
-- Adds demo financial data for paycheck and spending calculations without Plaid credentials, a hosted backend, or real bank accounts.
-- Demo scenarios cover weekly PUBLIX PAYROLL, biweekly ACME PAYROLL, variable DOORDASH gig income, rent, phone, electric, Netflix, gym, gas, groceries, duplicate charges, lower paycheck, missing paycheck, and bill-before-payday warnings.
-- Developer controls: Use demo financial data, Reset demo data, Simulate next payday, Simulate lower paycheck, Simulate missing paycheck, and Simulate bill before payday.
+- Adds a fair mock Premium gate plan for bank/card sync while keeping manual paycheck planning free.
+- Free users keep manual paycheck setup, manual bills, manual safe-to-spend, payday countdown, basic reminders, and demo financial previews.
+- Mock Premium unlocks real bank/card connect and sync testing for automatic paycheck detection, recurring bill detection, auto safe-to-spend, alerts/watch-outs, Renewal Radar sharing, reports, backup/export, style packs, and widgets.

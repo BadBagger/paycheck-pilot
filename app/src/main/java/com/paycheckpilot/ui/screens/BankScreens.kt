@@ -67,6 +67,7 @@ fun ConnectedAccountsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        item { PremiumBankSyncCard(state) }
         item { BankPrivacyCard() }
         item {
             BankStatusCard(state.connectionState, state.bankMessage)
@@ -75,12 +76,12 @@ fun ConnectedAccountsScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
                     onClick = onConnect,
-                    enabled = state.connectionState != BankConnectionStatus.Connecting && !state.bankSyncInProgress,
+                    enabled = state.mockPremiumEnabled && state.connectionState != BankConnectionStatus.Connecting && !state.bankSyncInProgress,
                     modifier = Modifier.weight(1f),
                 ) { Text("Connect bank/card") }
                 Button(
                     onClick = onSync,
-                    enabled = visibleAccounts.any { it.status == BankConnectionStatus.Connected } && !state.bankSyncInProgress,
+                    enabled = state.mockPremiumEnabled && visibleAccounts.any { it.status == BankConnectionStatus.Connected } && !state.bankSyncInProgress,
                     modifier = Modifier.weight(1f),
                 ) { Text(if (state.bankSyncInProgress) "Syncing" else "Sync now") }
             }
@@ -230,6 +231,24 @@ fun BankSafeToSpendScreen(state: PaycheckPilotUiState) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PremiumBankSyncCard(state: PaycheckPilotUiState) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f))) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Bank/card sync is Premium", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(state.premiumUpsell)
+            Text(
+                if (state.mockPremiumEnabled) {
+                    "Mock Premium is on. Bank/card sync and auto-updates are available for testing."
+                } else {
+                    "Free users can use manual planning and preview bank sync with demo financial data."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

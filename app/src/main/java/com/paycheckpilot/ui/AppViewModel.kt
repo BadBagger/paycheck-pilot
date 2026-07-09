@@ -53,7 +53,12 @@ data class PaycheckPilotUiState(
     val pendingPlaidLinkToken: String? = null,
     val connectionState: BankConnectionStatus = BankConnectionStatus.NotConnected,
     val backendUrl: String = "",
+    val mockPremiumEnabled: Boolean = false,
+    val premiumUpsell: String = PREMIUM_UPSELL_COPY,
 )
+
+const val PREMIUM_UPSELL_COPY: String =
+    "Premium connects Paycheck Pilot to your bank/card so it can find paychecks, bills, and safe-to-spend money automatically."
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: BudgetRepository
@@ -94,6 +99,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             bankSyncRepository.detectedBills,
             bankSyncRepository.bankSummary,
             bankSettingsStore.backendUrl,
+            bankSettingsStore.mockPremiumEnabled,
         ) { values ->
             @Suppress("UNCHECKED_CAST")
             val settings = values[0] as UserBudgetSettings?
@@ -109,6 +115,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val detectedBills = values[5] as List<DetectedBill>
             val bankSummary = values[6] as BankSummarySnapshot?
             val backendUrl = values[7] as String
+            val mockPremiumEnabled = values[8] as Boolean
             val today = LocalDate.now()
             val nextPaycheck = paychecks.firstOrNull { !it.date.isBefore(today) }
             PaycheckPilotUiState(
@@ -122,6 +129,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 dashboard = settings?.let { BudgetCalculator.dashboard(it, bills, today) },
                 timeline = settings?.let { BudgetCalculator.timeline(it, bills, nextPaycheck, today) }.orEmpty(),
                 backendUrl = backendUrl,
+                mockPremiumEnabled = mockPremiumEnabled,
             )
         }
         uiState = combine(
@@ -227,8 +235,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         bankMessage.value = "Backend URL updated."
     }
 
+    fun setMockPremium(enabled: Boolean) {
+        bankSettingsStore.updateMockPremium(enabled)
+        bankMessage.value = if (enabled) {
+            "Mock Premium enabled for testing bank/card sync."
+        } else {
+            "Mock Premium expired. Manual planning stays available and automatic bank sync is paused."
+        }
+    }
+
     fun startPlaidLink() {
         viewModelScope.launch {
+            if (!bankSettingsStore.hasMockPremium()) {
+                connectionState.value = BankConnectionStatus.NotConnected
+                bankMessage.value = PREMIUM_UPSELL_COPY
+                return@launch
+            }
             connectionState.value = BankConnectionStatus.Connecting
             bankMessage.value = "Requesting a secure Plaid Link token..."
             runCatching {
@@ -289,6 +311,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun syncBankAccounts() {
         viewModelScope.launch {
+            if (!bankSettingsStore.hasMockPremium()) {
+                connectionState.value = BankConnectionStatus.Disconnected
+                bankMessage.value = "Mock Premium expired. Automatic bank sync is paused, but manual editing still works."
+                return@launch
+            }
             bankSyncInProgress.value = true
             bankMessage.value = null
             runCatching {
